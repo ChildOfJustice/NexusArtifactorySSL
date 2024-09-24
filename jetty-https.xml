@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "http://www.eclipse.org/jetty/configure_9_0.dtd">
+<Configure id="Server" class="org.eclipse.jetty.server.Server">
+
+  <!--
+  ==== HTTPS ====
+  Set the following inside nexus.properties:
+  application-port-ssl: the port to listen for https connections
+  -->
+  
+  <Ref refid="httpConfig">
+    <Set name="secureScheme">https</Set>
+    <Set name="securePort"><Property name="application-port-ssl" /></Set>
+  </Ref>
+
+  <New id="httpsConfig" class="org.eclipse.jetty.server.HttpConfiguration">
+    <Arg><Ref refid="httpConfig"/></Arg>
+    <Call name="addCustomizer">
+      <Arg>
+        <New id="secureRequestCustomizer" class="org.eclipse.jetty.server.SecureRequestCustomizer">
+          <!-- 7776000 seconds = 90 days -->
+          <Set name="stsMaxAge"><Property name="jetty.https.stsMaxAge" default="7776000"/></Set>
+          <Set name="stsIncludeSubDomains"><Property name="jetty.https.stsIncludeSubDomains" default="false"/></Set>
+          <Set name="sniHostCheck"><Property name="jetty.https.sniHostCheck" default="false"/></Set>
+        </New>
+      </Arg>
+    </Call>
+  </New>
+
+  <New id="sslContextFactory" class="org.eclipse.jetty.util.ssl.SslContextFactory$Server">
+    <Set name="certAlias">example</Set>
+    <!-- <Set name="KeyStorePath"><Property name="ssl.etc"/>/keystore.jks</Set> -->
+    <Set name="KeyStorePath">/opt/sonatype/sonatype-work/nexus3/etc/ssl/keystore.jks</Set>
+    <Set name="KeyStorePassword">password</Set>
+    <Set name="KeyManagerPassword">password</Set>
+    <!-- <Set name="TrustStorePath"><Property name="ssl.etc"/>/truststore.jks</Set> -->
+    <!-- <Set name="TrustStorePassword">!</Set> -->
+    <!-- <Set name="EndpointIdentificationAlgorithm"></Set> -->
+    <!-- <Set name="NeedClientAuth"><Property name="jetty.ssl.needClientAuth" default="false"/></Set> -->
+    <!-- <Set name="WantClientAuth"><Property name="jetty.ssl.wantClientAuth" default="false"/></Set> -->
+    <!-- <Set name="ExcludeCipherSuites"></Set> -->
+    <!-- Exclude specific cipher suites -->
+    <Set name="ExcludeCipherSuites">
+      <Array type="java.lang.String">
+        <Item>SSLv3</Item>
+      </Array>
+    </Set>
+  </New>
+
+  <!-- Connector Configuration -->
+  <Call name="addConnector">
+    <Arg>
+      <New class="org.eclipse.jetty.server.ServerConnector">
+        <Arg><Ref refid="Server"/></Arg>
+        <Arg><Ref refid="sslContextFactory"/></Arg>
+        <Set name="port">8443</Set> <!-- Change this to your desired SSL port -->
+        <Set name="idleTimeout">30000</Set>
+      </New>
+    </Arg>
+  </Call>
+
+</Configure>
