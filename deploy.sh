@@ -2,6 +2,7 @@
 set -e
 
 echo "Generating SSL certificate..."
+rm -rf keystore.jks
 sh generateCertificate.sh
 
 echo "Building Docker image..."
